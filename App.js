@@ -7,6 +7,7 @@ import { theme } from "./colors";
 export default function App() {
   const [working, setWorking] = useState(false);
   const [text, setText] = useState("")
+  const [toDos, setToDos] = useState({})
 
   const travel = () => {
     setWorking(false)
@@ -18,6 +19,18 @@ export default function App() {
 
   const textChangeHandler = (payload) => {
     setText(payload);
+  }
+
+  const addTodo = () => {
+    if(text === ''){
+      return;
+    }
+
+    const newTodos = Object.assign({}, toDos, {[Date.now()]: {text, work: working}});
+
+    setToDos(newTodos)
+
+    setText('');
   }
 
   return (
@@ -32,7 +45,13 @@ export default function App() {
         </TouchableOpacity>
       </View>
       <View>
-        <TextInput style={styles.input} placeholder={working ? "Add a To Do" : "Where do you want to go?"} onChangeText={textChangeHandler} value={text}/>
+        <TextInput
+          style={styles.input}
+          placeholder={working ? "Add a To Do" : "Where do you want to go?"}
+          onChangeText={textChangeHandler}
+          value={text}
+          onSubmitEditing={addTodo}
+        />
       </View>
     </View>
   );
