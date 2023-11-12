@@ -1,8 +1,12 @@
 import { StatusBar } from 'expo-status-bar';
-import {useState} from "react";
-import { StyleSheet, Text, View, TouchableOpacity, TextInput } from 'react-native';
+import {useState, useEffect} from "react";
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Fontisto } from '@expo/vector-icons';
 
 import { theme } from "./colors";
+
+const STORAGE_KEY = '@toDos'
 
 export default function App() {
   const [working, setWorking] = useState(false);
@@ -21,7 +25,20 @@ export default function App() {
     setText(payload);
   }
 
-  const addTodo = () => {
+  const loadToDos = async () => {
+    const s = await AsyncStorage.getItem(STORAGE_KEY);
+
+    if(s){
+      setToDos(JSON.parse(s));
+    }
+
+  }
+
+  const saveTodos = async (toSave) => {
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(toSave))
+  }
+
+  const addTodo = async () => {
     if(text === ''){
       return;
     }
@@ -30,8 +47,31 @@ export default function App() {
 
     setToDos(newTodos)
 
+    await saveTodos(newTodos)
+
     setText('');
   }
+
+  const deleteToDo =  (id) => {
+    Alert.alert("Delete To Do?", "Are you sure?", [{
+      text: 'Cancel'
+    }, {text: "I'm Sure", onPress : () => {
+    const newTodos = {...toDos};
+
+    delete newTodos[id];
+
+    setToDos(newTodos);
+    saveTodos(newTodos);
+
+      }}]);
+
+
+  }
+
+  useEffect(() => {
+    loadToDos()
+  },[])
+
 
   return (
     <View style={styles.container}>
@@ -53,6 +93,18 @@ export default function App() {
           onSubmitEditing={addTodo}
         />
       </View>
+      <ScrollView>
+        {Object.entries(toDos).map(([key, value]) =>
+          value.work === working ? <View key={key} style={styles.toDo}>
+            <Text style={styles.toDoText}>
+              {value.text}
+            </Text>
+            <TouchableOpacity onPress={() => deleteToDo(key)}>
+              <Fontisto name="trash" size={24} color="white" />
+            </TouchableOpacity>
+          </View> : null
+        )}
+      </ScrollView>
     </View>
   );
 }
@@ -76,9 +128,24 @@ const styles = StyleSheet.create({
   input : {
     backgroundColor: 'white',
     paddingVertical: 10,
-    paddingHorizontal: 15,
+    paddingHorizontal: 20,
     borderRadius: 10,
-    marginTop: 20,
-    fontSize: 18
+    marginVertical: 20,
+    fontSize: 18,
+  },
+  toDo : {
+    backgroundColor: theme.grey,
+    marginBottom: 10,
+    paddingVertical: 20,
+    paddingHorizontal: 40,
+    borderRadius: 10,
+    flexDirection: "row",
+    alignItems:"center",
+    justifyContent: "space-between"
+  },
+  toDoText : {
+    color: "white",
+    fontSize: 16,
+    fontWeight: 500
   }
 });
